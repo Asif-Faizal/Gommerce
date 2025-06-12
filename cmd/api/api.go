@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Asif-Faizal/Gommerce/services/user"
 	"github.com/gorilla/mux"
 )
 
@@ -24,6 +25,9 @@ func (s *APIServer) Run() error {
 	router := mux.NewRouter()
 	subrouter := router.PathPrefix("/api/v1").Subrouter()
 	log.Println("Starting server on", s.listenAddress)
+
+	userHandler := user.NewHandler()
+	userHandler.RegisterRoutes(subrouter)
 
 	return http.ListenAndServe(s.listenAddress, router)
 }
