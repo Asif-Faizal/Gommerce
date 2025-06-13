@@ -74,10 +74,13 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		"status":  "success",
 		"message": "login successful",
 		"data": map[string]interface{}{
-			"id":        user.ID,
-			"firstName": user.FirstName,
-			"lastName":  user.LastName,
-			"email":     user.Email,
+			"token": "token",
+			"user": map[string]interface{}{
+				"id":        user.ID,
+				"firstName": user.FirstName,
+				"lastName":  user.LastName,
+				"email":     user.Email,
+			},
 		},
 	})
 }
@@ -155,8 +158,18 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return success response
-	utils.WriteJSON(w, http.StatusCreated, map[string]string{
+	utils.WriteJSON(w, http.StatusCreated, map[string]interface{}{
+		"status":  "success",
 		"message": "user created successfully",
+		"data": map[string]interface{}{
+			"token": "token",
+			"user": map[string]interface{}{
+				"id":        user.ID,
+				"firstName": user.FirstName,
+				"lastName":  user.LastName,
+				"email":     user.Email,
+			},
+		},
 	})
 }
 
