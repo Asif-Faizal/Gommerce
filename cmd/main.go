@@ -3,6 +3,7 @@
 package main
 
 import (
+	"database/sql"
 	"log" // Standard library for logging
 
 	"github.com/Asif-Faizal/Gommerce/cmd/api"
@@ -32,14 +33,10 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatal(err)
 	}
 
-	// Test the database connection
-	if err := db.Ping(); err != nil {
-		log.Fatalf("Failed to ping database: %v", err)
-	}
-	log.Println("Successfully connected to database")
+	initStorage(db)
 
 	// Create a new API server instance with the configured port and database connection
 	server := api.NewAPIServer(config.Envs.Port, db)
@@ -49,4 +46,13 @@ func main() {
 	if err := server.Run(); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+}
+
+func initStorage(db *sql.DB) error {
+	err := db.Ping()
+	if err != nil {
+		return err
+	}
+	log.Println("Successfully connected to database")
+	return nil
 }
