@@ -462,3 +462,70 @@ We welcome contributions! Here's how:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Database Migrations
+
+### Migration Structure
+```xml
+cmd/migrate/
+├── migrations/           # Migration files
+│   ├── 000001_add-user-table.up.sql   # Creates users table
+│   └── 000001_add-user-table.down.sql # Drops users table
+└── main.go              # Migration runner
+```
+
+### Users Table Schema
+```sql
+CREATE TABLE users (
+    id INT UNSIGNED AUTO_INCREMENT,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+### Running Migrations
+
+1. **Create a new migration**:
+   ```bash
+   make migration-create migration_name
+   ```
+
+2. **Apply migrations**:
+   ```bash
+   make migrate-up
+   ```
+
+3. **Rollback migrations**:
+   ```bash
+   make migrate-down
+   ```
+
+### Migration Commands
+
+The project includes several Makefile commands for managing migrations:
+
+- `make migration-create`: Create a new migration file
+- `make migrate-up`: Apply all pending migrations
+- `make migrate-down`: Rollback the last migration
+
+### Migration Best Practices
+
+1. **Naming Conventions**
+   - Use descriptive names for migrations
+   - Follow the pattern: `NNNNNN_description.up.sql`
+   - Include corresponding down migration
+
+2. **Version Control**
+   - Always commit both up and down migrations
+   - Never modify existing migrations
+   - Create new migrations for changes
+
+3. **Data Integrity**
+   - Include proper constraints
+   - Use appropriate data types
+   - Add necessary indexes
