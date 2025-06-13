@@ -4,18 +4,22 @@ package user
 import (
 	"net/http"
 
+	"github.com/Asif-Faizal/Gommerce/services/auth"
+	"github.com/Asif-Faizal/Gommerce/types"
+	"github.com/Asif-Faizal/Gommerce/utils"
 	"github.com/gorilla/mux"
 )
 
 // Handler represents the user-related HTTP handlers
 // It contains methods to handle different user-related endpoints
 type Handler struct {
+	store types.UserStore
 }
 
 // NewHandler creates a new instance of the user Handler
 // This is a constructor function for the Handler struct
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(store types.UserStore) *Handler {
+	return &Handler{store: store}
 }
 
 // RegisterRoutes sets up all the user-related routes
@@ -40,8 +44,33 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 // r is the HTTP request containing the registration data
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	// get JSON payload
+	var payload types.RegisterUserPayload
 	// validate the request body
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
 	// check if user already exists
+	_, err := h.store.GetUserByEmail(payload.Email)
+	if err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	//hash the password
+	hashedPassword, err := auth.HashPassword(payload.Password)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	// if does not exist, create user, else return error
+	user := &types.User{
+		FirstName: payload.FirstName,
+		LastName:  payload.LastName,
+		Email:     payload.Email,
+		Password:  hashedPassword,
+	}
+	utils.WriteJSON(w, http.StatusOK, user)
 	// return the response
 }
