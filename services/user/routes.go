@@ -2,6 +2,7 @@
 package user
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -39,14 +40,75 @@ func (h *Handler) RegisterRoutes(router *mux.Router) {
 // w is the response writer to send back HTTP responses
 // r is the HTTP request containing the login data
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement login logic
+	var payload types.LoginUserPayload
+	if err := utils.ParseJSON(r, &payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// Validate the payload
+	if err := validateLoginPayload(payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// Get user by email
+	user, err := h.store.GetUserByEmail(payload.Email)
+	if err == sql.ErrNoRows {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid email or password"))
+		return
+	}
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error checking user: %w", err))
+		return
+	}
+
+	// Verify password
+	if !auth.ComparePasswords(user.Password, payload.Password) {
+		utils.WriteError(w, http.StatusUnauthorized, fmt.Errorf("invalid email or password"))
+		return
+	}
+
+	// Return success response with user data (excluding password)
+	utils.WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"status":  "success",
+		"message": "login successful",
+		"data": map[string]interface{}{
+			"id":        user.ID,
+			"firstName": user.FirstName,
+			"lastName":  user.LastName,
+			"email":     user.Email,
+		},
+	})
+}
+
+// validateLoginPayload validates the login payload
+// Returns an error if any required field is missing or invalid
+func validateLoginPayload(payload types.LoginUserPayload) error {
+	// Email validation
+	if payload.Email == "" {
+		return fmt.Errorf("email is required")
+	}
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(payload.Email) {
+		return fmt.Errorf("invalid email format")
+	}
+
+	// Password validation
+	if payload.Password == "" {
+		return fmt.Errorf("password is required")
+	}
+	if len(payload.Password) < 8 {
+		return fmt.Errorf("password must be at least 8 characters long")
+	}
+
+	return nil
 }
 
 // handleRegister processes user registration requests
 // w is the response writer to send back HTTP responses
 // r is the HTTP request containing the registration data
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
-	// Parse the JSON payload from the request body
 	var payload types.RegisterUserPayload
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
@@ -54,26 +116,30 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate the payload
-	if err := h.validateRegisterPayload(&payload); err != nil {
+	if err := h.validateRegisterPayload(payload); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	// Check if user already exists in the database
-	_, err := h.store.GetUserByEmail(payload.Email)
-	if err == nil {
+	// Check if user already exists
+	existingUser, err := h.store.GetUserByEmail(payload.Email)
+	if err != nil && err != sql.ErrNoRows {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error checking user existence: %w", err))
+		return
+	}
+	if existingUser != nil {
 		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user with email %s already exists", payload.Email))
 		return
 	}
 
-	// Hash the password for secure storage
+	// Hash the password
 	hashedPassword, err := auth.HashPassword(payload.Password)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error hashing password: %w", err))
 		return
 	}
 
-	// Create a new user object with the provided data
+	// Create new user
 	user := &types.User{
 		FirstName: payload.FirstName,
 		LastName:  payload.LastName,
@@ -82,9 +148,9 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 	}
 
-	// Save the user to the database
+	// Save user to database
 	if err := h.store.CreateUser(user); err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, err)
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error creating user: %w", err))
 		return
 	}
 
@@ -96,7 +162,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 // validateRegisterPayload validates the registration payload
 // Returns an error if any required field is missing or invalid
-func (h *Handler) validateRegisterPayload(payload *types.RegisterUserPayload) error {
+func (h *Handler) validateRegisterPayload(payload types.RegisterUserPayload) error {
 	// Email validation
 	if payload.Email == "" {
 		return fmt.Errorf("email is required")

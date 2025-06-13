@@ -3,6 +3,7 @@ package user
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -375,6 +376,165 @@ func TestUserServiceHandlers(t *testing.T) {
 		}
 		if !createUserCalled {
 			t.Error("CreateUser was not called")
+		}
+	})
+
+	// Test login functionality
+	t.Run("Login Tests", func(t *testing.T) {
+		testCases := []struct {
+			name          string
+			payload       types.LoginUserPayload
+			mockUser      *types.User
+			mockError     error
+			expectedCode  int
+			expectedError string
+		}{
+			{
+				name: "successful login",
+				payload: types.LoginUserPayload{
+					Email:    "test@example.com",
+					Password: "password123",
+				},
+				mockUser: &types.User{
+					ID:        1,
+					FirstName: "John",
+					LastName:  "Doe",
+					Email:     "test@example.com",
+					Password:  "$2a$10$abcdefghijklmnopqrstuv", // Mock hashed password
+				},
+				expectedCode: http.StatusOK,
+			},
+			{
+				name: "user not found",
+				payload: types.LoginUserPayload{
+					Email:    "nonexistent@example.com",
+					Password: "password123",
+				},
+				mockError:     sql.ErrNoRows,
+				expectedCode:  http.StatusUnauthorized,
+				expectedError: "invalid email or password",
+			},
+			{
+				name: "invalid password",
+				payload: types.LoginUserPayload{
+					Email:    "test@example.com",
+					Password: "wrongpassword",
+				},
+				mockUser: &types.User{
+					ID:        1,
+					FirstName: "John",
+					LastName:  "Doe",
+					Email:     "test@example.com",
+					Password:  "$2a$10$abcdefghijklmnopqrstuv", // Mock hashed password
+				},
+				expectedCode:  http.StatusUnauthorized,
+				expectedError: "invalid email or password",
+			},
+			{
+				name: "empty email",
+				payload: types.LoginUserPayload{
+					Email:    "",
+					Password: "password123",
+				},
+				expectedCode:  http.StatusBadRequest,
+				expectedError: "email is required",
+			},
+			{
+				name: "invalid email format",
+				payload: types.LoginUserPayload{
+					Email:    "invalid-email",
+					Password: "password123",
+				},
+				expectedCode:  http.StatusBadRequest,
+				expectedError: "invalid email format",
+			},
+			{
+				name: "empty password",
+				payload: types.LoginUserPayload{
+					Email:    "test@example.com",
+					Password: "",
+				},
+				expectedCode:  http.StatusBadRequest,
+				expectedError: "password is required",
+			},
+			{
+				name: "password too short",
+				payload: types.LoginUserPayload{
+					Email:    "test@example.com",
+					Password: "short",
+				},
+				expectedCode:  http.StatusBadRequest,
+				expectedError: "password must be at least 8 characters long",
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				// Create mock store
+				mockStore := &mockUserStore{
+					getUserByEmailFunc: func(email string) (*types.User, error) {
+						if tc.mockError != nil {
+							return nil, tc.mockError
+						}
+						return tc.mockUser, nil
+					},
+				}
+
+				handler := NewHandler(mockStore)
+
+				// Create request
+				payload, err := json.Marshal(tc.payload)
+				if err != nil {
+					t.Fatalf("Failed to marshal payload: %v", err)
+				}
+
+				req, err := http.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewBuffer(payload))
+				if err != nil {
+					t.Fatalf("Failed to create request: %v", err)
+				}
+
+				// Create response recorder
+				rr := httptest.NewRecorder()
+
+				// Create router and register handler
+				router := mux.NewRouter()
+				router.HandleFunc("/api/v1/login", handler.handleLogin).Methods(http.MethodPost)
+
+				// Serve request
+				router.ServeHTTP(rr, req)
+
+				// Check status code
+				if rr.Code != tc.expectedCode {
+					t.Errorf("Expected status %d, got %d", tc.expectedCode, rr.Code)
+				}
+
+				// Check response body
+				var response map[string]interface{}
+				if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+					t.Fatalf("Failed to decode response: %v", err)
+				}
+
+				if tc.expectedError != "" {
+					if response["error"] != tc.expectedError {
+						t.Errorf("Expected error %q, got %q", tc.expectedError, response["error"])
+					}
+				} else {
+					// Check success response structure
+					if response["status"] != "success" {
+						t.Error("Expected status 'success' in response")
+					}
+					if response["message"] != "login successful" {
+						t.Error("Expected message 'login successful' in response")
+					}
+					if data, ok := response["data"].(map[string]interface{}); ok {
+						if data["email"] != tc.payload.Email {
+							t.Error("Email mismatch in response data")
+						}
+					} else {
+						t.Error("Expected data object in response")
+					}
+				}
+			})
 		}
 	})
 }

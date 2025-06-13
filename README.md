@@ -5,6 +5,7 @@ A modern e-commerce API built with Go, following clean architecture principles a
 ## Why This Project?
 
 This project was created to demonstrate:
+
 - How to build a production-grade Go API
 - Best practices in Go development
 - Clean architecture principles
@@ -60,7 +61,9 @@ This project was created to demonstrate:
 ## Development Approach
 
 ### 1. Testing Strategy
+
 We follow Test-Driven Development (TDD):
+
 - Write tests first
 - Implement the feature
 - Refactor while keeping tests passing
@@ -75,7 +78,9 @@ We follow Test-Driven Development (TDD):
   ```
 
 ### 2. Error Handling
+
 We implement comprehensive error handling:
+
 - Clear error messages
 - Proper HTTP status codes
 - Consistent error response format
@@ -87,7 +92,9 @@ We implement comprehensive error handling:
   ```
 
 ### 3. Security Practices
+
 Security is a top priority:
+
 - Password hashing using bcrypt
 - Input validation
 - SQL injection prevention
@@ -96,22 +103,26 @@ Security is a top priority:
 ## Current Features
 
 ### API Server
+
 - RESTful API using Go's `net/http`
 - Gorilla Mux for routing
 - API versioning (v1)
 - Structured error handling
 
 ### Authentication
+
 - Secure password hashing
 - User registration with validation
 - JWT token support (coming soon)
 
 ### User Management
+
 - Registration endpoint
 - Email validation
 - Secure password storage
 
 ### Database
+
 - MySQL integration
 - Connection pooling
 - Prepared statements
@@ -120,13 +131,14 @@ Security is a top priority:
 ## API Endpoints
 
 ### User Registration
+
 ```http
 POST /api/v1/register
 Content-Type: application/json
 
 {
-    "first_name": "John",
-    "last_name": "Doe",
+    "firstName": "John",
+    "lastName": "Doe",
     "email": "john@example.com",
     "password": "securepassword"
 }
@@ -140,6 +152,103 @@ Response:
 }
 ```
 
+### User Login
+
+```http
+POST /api/v1/login
+Content-Type: application/json
+
+{
+    "email": "john@example.com",
+    "password": "securepassword"
+}
+```
+
+Response:
+```json
+{
+    "status": "success",
+    "message": "Login successful",
+    "data": {
+        "id": 1,
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john@example.com"
+    }
+}
+```
+
+### Get User by ID
+
+```http
+GET /api/v1/users/{id}
+Authorization: Bearer {token}
+```
+
+Response:
+```json
+{
+    "status": "success",
+    "data": {
+        "id": 1,
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john@example.com"
+    }
+}
+```
+
+### Curl Commands
+
+1. **Register a new user**:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "password": "securepassword123"
+  }'
+```
+
+2. **Login with user credentials**:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "securepassword123"
+  }'
+```
+
+3. **Get user details** (requires authentication):
+
+```bash
+curl -X GET http://localhost:8080/api/v1/users/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Response Status Codes
+
+- `200 OK`: Request successful
+- `201 Created`: Resource created successfully
+- `400 Bad Request`: Invalid input data
+- `401 Unauthorized`: Authentication required
+- `403 Forbidden`: Insufficient permissions
+- `404 Not Found`: Resource not found
+- `500 Internal Server Error`: Server error
+
+### Error Response Format
+
+```json
+{
+    "error": "Error message description"
+}
+```
+
 ## Implementation Deep Dive: User Registration
 
 Let's walk through the complete implementation of the user registration feature, from design to testing to implementation.
@@ -147,6 +256,7 @@ Let's walk through the complete implementation of the user registration feature,
 ### 1. Design Phase
 
 #### Requirements Analysis
+
 - User needs to provide: first name, last name, email, and password
 - Email must be unique
 - Password must be secure
@@ -154,28 +264,30 @@ Let's walk through the complete implementation of the user registration feature,
 - Response should be consistent
 
 #### Data Structures
+
 ```go
 // types/types.go
 type RegisterUserPayload struct {
-    FirstName string `json:"first_name"`
-    LastName  string `json:"last_name"`
+    FirstName string `json:"firstName"`
+    LastName  string `json:"lastName"`
     Email     string `json:"email"`
     Password  string `json:"password"`
 }
 
 type User struct {
     ID        int       `json:"id"`
-    FirstName string    `json:"first_name"`
-    LastName  string    `json:"last_name"`
+    FirstName string    `json:"firstName"`
+    LastName  string    `json:"lastName"`
     Email     string    `json:"email"`
     Password  string    `json:"password"`
-    CreatedAt time.Time `json:"created_at"`
+    CreatedAt time.Time `json:"createdAt"`
 }
 ```
 
 ### 2. Testing Phase (TDD)
 
 #### Test Cases
+
 ```go
 // services/user/routes_test.go
 func TestUserServiceHandlers(t *testing.T) {
@@ -203,6 +315,7 @@ func TestUserServiceHandlers(t *testing.T) {
 ```
 
 #### Mock Implementation
+
 ```go
 // services/user/routes_test.go
 type mockUserStore struct{}
@@ -219,6 +332,7 @@ func (m *mockUserStore) CreateUser(user *types.User) error {
 ### 3. Implementation Phase
 
 #### Handler Function
+
 ```go
 // services/user/routes.go
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -271,6 +385,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 ```
 
 #### Validation Function
+
 ```go
 // services/user/routes.go
 func validateRegisterPayload(payload types.RegisterUserPayload) error {
@@ -310,19 +425,21 @@ func validateRegisterPayload(payload types.RegisterUserPayload) error {
 ### 5. API Usage Example
 
 #### Request
+
 ```http
 POST /api/v1/register
 Content-Type: application/json
 
 {
-    "first_name": "John",
-    "last_name": "Doe",
+    "firstName": "John",
+    "lastName": "Doe",
     "email": "john@example.com",
     "password": "securepassword123"
 }
 ```
 
 #### Success Response
+
 ```json
 {
     "message": "user created successfully"
@@ -330,6 +447,7 @@ Content-Type: application/json
 ```
 
 #### Error Response
+
 ```json
 {
     "error": "email is required"
@@ -339,18 +457,20 @@ Content-Type: application/json
 ### 6. Testing the Implementation
 
 1. **Run the Tests**
+
 ```bash
 go test ./services/user -v
 ```
 
 2. **Manual Testing**
+
 ```bash
 # Using curl
 curl -X POST http://localhost:8080/api/v1/register \
   -H "Content-Type: application/json" \
   -d '{
-    "first_name": "John",
-    "last_name": "Doe",
+    "firstName": "John",
+    "lastName": "Doe",
     "email": "john@example.com",
     "password": "securepassword123"
   }'
@@ -383,11 +503,13 @@ This implementation follows Go best practices and provides a solid foundation fo
 ## Getting Started
 
 ### Prerequisites
+
 - Go 1.16+
 - Git
 - MySQL Server
 
 ### Environment Setup
+
 1. Clone the repository:
    ```bash
    git clone https://github.com/Asif-Faizal/Gommerce.git
@@ -418,6 +540,7 @@ This implementation follows Go best practices and provides a solid foundation fo
    ```
 
 ### Running Tests
+
 ```bash
 # Run all tests
 go test ./...
@@ -466,6 +589,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Database Migrations
 
 ### Migration Structure
+
 ```xml
 cmd/migrate/
 ├── migrations/           # Migration files
@@ -475,57 +599,147 @@ cmd/migrate/
 ```
 
 ### Users Table Schema
+
 ```sql
 CREATE TABLE users (
     id INT UNSIGNED AUTO_INCREMENT,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
+    firstName VARCHAR(50) NOT NULL,
+    lastName VARCHAR(50) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-### Running Migrations
+### Migration Runner Implementation
 
-1. **Create a new migration**:
-   ```bash
-   make migration-create migration_name
-   ```
+The migration runner (`cmd/migrate/main.go`) handles database migrations using the `golang-migrate` library. Here's how it works:
 
-2. **Apply migrations**:
+```go
+// Main components of the migration runner
+1. Database Connection
+   - Uses MySQL driver
+   - Configures connection using environment variables
+   - Enables native passwords and time parsing
+
+2. Migration Driver
+   - Creates MySQL-specific migration driver
+   - Handles database-specific operations
+   - Manages transaction safety
+
+3. Migration Instance
+   - Points to migrations directory
+   - Supports both up and down migrations
+   - Handles migration versioning
+```
+
+#### Environment Configuration
+
+The migration runner uses the following environment variables:
+```env
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_ADDRESS=localhost:3306
+DB_NAME=gommerce
+```
+
+#### Command Line Usage
+
+The migration runner accepts two commands:
+```bash
+# Apply migrations
+go run cmd/migrate/main.go up
+
+# Rollback migrations
+go run cmd/migrate/main.go down
+```
+
+#### Error Handling
+
+The migration runner includes robust error handling:
+
+- Database connection errors
+- Migration driver initialization errors
+- Migration execution errors
+- Version control errors
+
+#### Logging
+
+The runner provides detailed logging:
+
+- Configuration details
+- Database connection status
+- Migration execution results
+- Error messages when applicable
+
+### Migration Workflow
+
+1. **Initial Setup**
    ```bash
+   # Create database
+   mysql -u root -p
+   CREATE DATABASE gommerce;
+   
+   # Run initial migration
    make migrate-up
    ```
 
-3. **Rollback migrations**:
+2. **Creating New Migrations**
    ```bash
+   # Create a new migration
+   make migration-create add_new_table
+   
+   # This creates:
+   # - cmd/migrate/migrations/XXXXXX_add_new_table.up.sql
+   # - cmd/migrate/migrations/XXXXXX_add_new_table.down.sql
+   ```
+
+3. **Applying Migrations**
+   ```bash
+   # Apply all pending migrations
+   make migrate-up
+   
+   # Rollback last migration
    make migrate-down
    ```
 
-### Migration Commands
+4. **Verifying Migrations**
+   ```bash
+   # Check migration status
+   mysql -u root -p gommerce
+   SELECT * FROM schema_migrations;
+   ```
 
-The project includes several Makefile commands for managing migrations:
+### Migration Best Practices (Updated)
 
-- `make migration-create`: Create a new migration file
-- `make migrate-up`: Apply all pending migrations
-- `make migrate-down`: Rollback the last migration
-
-### Migration Best Practices
-
-1. **Naming Conventions**
-   - Use descriptive names for migrations
-   - Follow the pattern: `NNNNNN_description.up.sql`
-   - Include corresponding down migration
-
-2. **Version Control**
+1. **Version Control**
    - Always commit both up and down migrations
    - Never modify existing migrations
    - Create new migrations for changes
+   - Keep migrations in version control
+
+2. **Naming Conventions**
+   - Use descriptive names
+   - Follow pattern: `NNNNNN_description.up.sql`
+   - Include corresponding down migration
+   - Use snake_case for table and column names
 
 3. **Data Integrity**
    - Include proper constraints
    - Use appropriate data types
    - Add necessary indexes
+   - Handle foreign keys properly
+
+4. **Error Handling**
+   - Test migrations before deployment
+   - Include rollback procedures
+   - Handle edge cases
+   - Log migration results
+
+5. **Performance**
+   - Use appropriate indexes
+   - Optimize large migrations
+   - Consider batch operations
+   - Monitor migration execution time
