@@ -5,6 +5,7 @@ A modern e-commerce API built with Go, following clean architecture principles a
 ## Why This Project?
 
 This project was created to demonstrate:
+
 - How to build a production-grade Go API
 - Best practices in Go development
 - Clean architecture principles
@@ -60,7 +61,9 @@ This project was created to demonstrate:
 ## Development Approach
 
 ### 1. Testing Strategy
+
 We follow Test-Driven Development (TDD):
+
 - Write tests first
 - Implement the feature
 - Refactor while keeping tests passing
@@ -75,7 +78,9 @@ We follow Test-Driven Development (TDD):
   ```
 
 ### 2. Error Handling
+
 We implement comprehensive error handling:
+
 - Clear error messages
 - Proper HTTP status codes
 - Consistent error response format
@@ -87,7 +92,9 @@ We implement comprehensive error handling:
   ```
 
 ### 3. Security Practices
+
 Security is a top priority:
+
 - Password hashing using bcrypt
 - Input validation
 - SQL injection prevention
@@ -96,22 +103,26 @@ Security is a top priority:
 ## Current Features
 
 ### API Server
+
 - RESTful API using Go's `net/http`
 - Gorilla Mux for routing
 - API versioning (v1)
 - Structured error handling
 
 ### Authentication
+
 - Secure password hashing
 - User registration with validation
 - JWT token support (coming soon)
 
 ### User Management
+
 - Registration endpoint
 - Email validation
 - Secure password storage
 
 ### Database
+
 - MySQL integration
 - Connection pooling
 - Prepared statements
@@ -120,6 +131,7 @@ Security is a top priority:
 ## API Endpoints
 
 ### User Registration
+
 ```http
 POST /api/v1/register
 Content-Type: application/json
@@ -141,6 +153,7 @@ Response:
 ```
 
 ### User Login
+
 ```http
 POST /api/v1/login
 Content-Type: application/json
@@ -166,6 +179,7 @@ Response:
 ```
 
 ### Get User by ID
+
 ```http
 GET /api/v1/users/{id}
 Authorization: Bearer {token}
@@ -187,6 +201,7 @@ Response:
 ### Curl Commands
 
 1. **Register a new user**:
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/register \
   -H "Content-Type: application/json" \
@@ -199,6 +214,7 @@ curl -X POST http://localhost:8080/api/v1/register \
 ```
 
 2. **Login with user credentials**:
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/login \
   -H "Content-Type: application/json" \
@@ -209,6 +225,7 @@ curl -X POST http://localhost:8080/api/v1/login \
 ```
 
 3. **Get user details** (requires authentication):
+
 ```bash
 curl -X GET http://localhost:8080/api/v1/users/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
@@ -225,6 +242,7 @@ curl -X GET http://localhost:8080/api/v1/users/1 \
 - `500 Internal Server Error`: Server error
 
 ### Error Response Format
+
 ```json
 {
     "error": "Error message description"
@@ -238,6 +256,7 @@ Let's walk through the complete implementation of the user registration feature,
 ### 1. Design Phase
 
 #### Requirements Analysis
+
 - User needs to provide: first name, last name, email, and password
 - Email must be unique
 - Password must be secure
@@ -245,6 +264,7 @@ Let's walk through the complete implementation of the user registration feature,
 - Response should be consistent
 
 #### Data Structures
+
 ```go
 // types/types.go
 type RegisterUserPayload struct {
@@ -267,6 +287,7 @@ type User struct {
 ### 2. Testing Phase (TDD)
 
 #### Test Cases
+
 ```go
 // services/user/routes_test.go
 func TestUserServiceHandlers(t *testing.T) {
@@ -294,6 +315,7 @@ func TestUserServiceHandlers(t *testing.T) {
 ```
 
 #### Mock Implementation
+
 ```go
 // services/user/routes_test.go
 type mockUserStore struct{}
@@ -310,6 +332,7 @@ func (m *mockUserStore) CreateUser(user *types.User) error {
 ### 3. Implementation Phase
 
 #### Handler Function
+
 ```go
 // services/user/routes.go
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -362,6 +385,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 ```
 
 #### Validation Function
+
 ```go
 // services/user/routes.go
 func validateRegisterPayload(payload types.RegisterUserPayload) error {
@@ -401,6 +425,7 @@ func validateRegisterPayload(payload types.RegisterUserPayload) error {
 ### 5. API Usage Example
 
 #### Request
+
 ```http
 POST /api/v1/register
 Content-Type: application/json
@@ -414,6 +439,7 @@ Content-Type: application/json
 ```
 
 #### Success Response
+
 ```json
 {
     "message": "user created successfully"
@@ -421,6 +447,7 @@ Content-Type: application/json
 ```
 
 #### Error Response
+
 ```json
 {
     "error": "email is required"
@@ -430,11 +457,13 @@ Content-Type: application/json
 ### 6. Testing the Implementation
 
 1. **Run the Tests**
+
 ```bash
 go test ./services/user -v
 ```
 
 2. **Manual Testing**
+
 ```bash
 # Using curl
 curl -X POST http://localhost:8080/api/v1/register \
@@ -474,11 +503,13 @@ This implementation follows Go best practices and provides a solid foundation fo
 ## Getting Started
 
 ### Prerequisites
+
 - Go 1.16+
 - Git
 - MySQL Server
 
 ### Environment Setup
+
 1. Clone the repository:
    ```bash
    git clone https://github.com/Asif-Faizal/Gommerce.git
@@ -509,6 +540,7 @@ This implementation follows Go best practices and provides a solid foundation fo
    ```
 
 ### Running Tests
+
 ```bash
 # Run all tests
 go test ./...
@@ -557,6 +589,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Database Migrations
 
 ### Migration Structure
+
 ```xml
 cmd/migrate/
 ├── migrations/           # Migration files
@@ -566,6 +599,7 @@ cmd/migrate/
 ```
 
 ### Users Table Schema
+
 ```sql
 CREATE TABLE users (
     id INT UNSIGNED AUTO_INCREMENT,
@@ -602,6 +636,7 @@ The migration runner (`cmd/migrate/main.go`) handles database migrations using t
 ```
 
 #### Environment Configuration
+
 The migration runner uses the following environment variables:
 ```env
 DB_USER=your_db_user
@@ -611,6 +646,7 @@ DB_NAME=gommerce
 ```
 
 #### Command Line Usage
+
 The migration runner accepts two commands:
 ```bash
 # Apply migrations
@@ -621,14 +657,18 @@ go run cmd/migrate/main.go down
 ```
 
 #### Error Handling
+
 The migration runner includes robust error handling:
+
 - Database connection errors
 - Migration driver initialization errors
 - Migration execution errors
 - Version control errors
 
 #### Logging
+
 The runner provides detailed logging:
+
 - Configuration details
 - Database connection status
 - Migration execution results

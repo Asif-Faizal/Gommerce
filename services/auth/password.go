@@ -15,3 +15,10 @@ func HashPassword(password string) (string, error) {
 	// Convert the byte slice to string before returning
 	return string(hashedPassword), nil
 }
+
+// ComparePasswords compares a hashed password with a plain text password
+// Returns true if the passwords match, false otherwise
+func ComparePasswords(hashedPassword, plainPassword string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
+	return err == nil
+}
