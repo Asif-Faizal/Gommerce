@@ -3,7 +3,10 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 // Config holds all configuration values for the application
@@ -24,12 +27,17 @@ var Envs = InitConfig()
 // InitConfig initializes the configuration with environment variables or default values
 // Returns a Config struct with all necessary settings
 func InitConfig() Config {
+	// Load environment variables from .env file if it exists
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: .env file not found: %v", err)
+	}
+
 	return Config{
 		PublicHost: getEnv("PUBLIC_HOST", "http://localhost"),
-		Port:       getEnv("PORT", "8080"),
+		Port:       ":" + getEnv("PORT", "8080"), // Add colon prefix for proper port format
 		DBUser:     getEnv("DB_USER", "root"),
 		DBPassword: getEnv("DB_PASSWORD", "root"),
-		DBAddress:  fmt.Sprintf("%s:%s", getEnv("DB_HOST", "http://127.0.0.1"), getEnv("DB_PORT", "3306")),
+		DBAddress:  fmt.Sprintf("%s:%s", getEnv("DB_HOST", "127.0.0.1"), getEnv("DB_PORT", "3306")),
 		DBName:     getEnv("DB_NAME", "gommerce"),
 	}
 }

@@ -14,6 +14,12 @@ import (
 // main is the entry point function that gets called when the program starts
 // It initializes the database connection and starts the API server
 func main() {
+	// Log the configuration being used
+	log.Printf("Starting server with configuration:")
+	log.Printf("Host: %s", config.Envs.PublicHost)
+	log.Printf("Port: %s", config.Envs.Port)
+	log.Printf("Database: %s@%s/%s", config.Envs.DBUser, config.Envs.DBAddress, config.Envs.DBName)
+
 	// Initialize MySQL database connection using environment configuration
 	db, err := db.MySQLStorage(mysql.Config{
 		User:                 config.Envs.DBUser,
@@ -26,15 +32,21 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
+
+	// Test the database connection
+	if err := db.Ping(); err != nil {
+		log.Fatalf("Failed to ping database: %v", err)
+	}
+	log.Println("Successfully connected to database")
 
 	// Create a new API server instance with the configured port and database connection
 	server := api.NewAPIServer(config.Envs.Port, db)
 
 	// Start the server and handle any potential errors
+	log.Printf("Starting server on %s", config.Envs.Port)
 	if err := server.Run(); err != nil {
-		// If there's an error, log it and exit the program
-		log.Fatal(err)
+		log.Fatalf("Server failed to start: %v", err)
 	}
 }
