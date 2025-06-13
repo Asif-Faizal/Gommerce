@@ -39,5 +39,9 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 // w is the response writer to send back HTTP responses
 // r is the HTTP request containing the registration data
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement registration logic
+	// get JSON payload
+	// validate the request body
+	// check if user already exists
+	// if does not exist, create user, else return error
+	// return the response
 }
