@@ -13,7 +13,7 @@ import (
 // Handler represents the user-related HTTP handlers
 // It contains methods to handle different user-related endpoints
 type Handler struct {
-	store types.UserStore
+	store types.UserStore // Interface for user data operations
 }
 
 // NewHandler creates a new instance of the user Handler
@@ -43,34 +43,35 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 // w is the response writer to send back HTTP responses
 // r is the HTTP request containing the registration data
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
-	// get JSON payload
+	// Parse the JSON payload from the request body
 	var payload types.RegisterUserPayload
-	// validate the request body
 	if err := utils.ParseJSON(r, &payload); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
-	// check if user already exists
+
+	// Check if user already exists in the database
 	_, err := h.store.GetUserByEmail(payload.Email)
 	if err != nil {
 		utils.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	//hash the password
+	// Hash the password for secure storage
 	hashedPassword, err := auth.HashPassword(payload.Password)
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	// if does not exist, create user, else return error
+	// Create a new user object with the provided data
 	user := &types.User{
 		FirstName: payload.FirstName,
 		LastName:  payload.LastName,
 		Email:     payload.Email,
 		Password:  hashedPassword,
 	}
+
+	// Return the created user data
 	utils.WriteJSON(w, http.StatusOK, user)
-	// return the response
 }

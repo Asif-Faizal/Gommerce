@@ -13,8 +13,11 @@ A modern e-commerce API built with Go, following clean architecture principles a
 │   └── env.go       # Environment configuration
 ├── db/
 │   └── db.go        # Database connection setup
-└── services/
-    └── user/        # User-related functionality
+├── services/
+│   ├── auth/        # Authentication services
+│   └── user/        # User-related functionality
+├── types/           # Shared types and interfaces
+└── utils/           # Utility functions
 ```
 
 ## Current Features
@@ -27,27 +30,53 @@ A modern e-commerce API built with Go, following clean architecture principles a
 - Structured error handling
 - MySQL database integration
 
-### Configuration Management
+### Authentication
 
-- Environment-based configuration
-- Default values for development
-- Configurable database settings
-- Flexible port and host configuration
+- Secure password hashing using bcrypt
+- User registration with email validation
+- Password security best practices
+- JWT token support (coming soon)
+
+### User Management
+
+- User registration endpoint
+- Email uniqueness validation
+- Secure password storage
+- User data persistence
 
 ### Database
 
 - MySQL database integration
-- Configurable connection settings
-- Connection pooling support
-- Environment-based configuration
+- Connection pooling
+- Prepared statements for security
+- Error handling and logging
 
-### User Service
+### API Endpoints
 
-- User authentication endpoints:
-  - `/api/v1/login` - User login
-  - `/api/v1/register` - User registration
-- Modular handler structure for easy maintenance
-- Clean separation of concerns
+#### User Endpoints
+
+##### Register
+
+- **URL**: `/api/v1/register`
+- **Method**: `POST`
+- **Body**:
+
+  ```json
+  {
+    "first_name": "string",
+    "last_name": "string",
+    "email": "string",
+    "password": "string"
+  }
+  ```
+
+- **Status**: Implemented
+
+##### Login
+
+- **URL**: `/api/v1/login`
+- **Method**: `POST`
+- **Status**: In Progress
 
 ## Getting Started
 
@@ -66,7 +95,7 @@ PUBLIC_HOST=http://localhost
 PORT=8080
 DB_USER=root
 DB_PASSWORD=root
-DB_HOST=http://127.0.0.1
+DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_NAME=gommerce
 ```
@@ -88,29 +117,19 @@ go mod download
 
 3. Set up your environment variables (optional, defaults will be used if not set)
 
-4. Run the server:
+4. Create the database:
+
+```sql
+CREATE DATABASE gommerce;
+```
+
+5. Run the server:
 
 ```bash
 go run cmd/main.go
 ```
 
 The server will start on the configured port (default: `http://localhost:8080`)
-
-## API Endpoints
-
-### User Endpoints
-
-#### Login
-
-- **URL**: `/api/v1/login`
-- **Method**: `POST`
-- **Status**: To be implemented
-
-#### Register
-
-- **URL**: `/api/v1/register`
-- **Method**: `POST`
-- **Status**: To be implemented
 
 ## Project Architecture
 
@@ -126,29 +145,42 @@ The project follows a clean, modular architecture:
    - Sets up routing and middleware
    - Handles API versioning
 
-3. **Configuration** (`config/env.go`)
-   - Manages environment variables
-   - Provides default configurations
-   - Handles database settings
-
-4. **Database** (`db/db.go`)
-   - Manages database connections
-   - Handles connection pooling
-   - Provides database utilities
-
-5. **User Service** (`services/user/routes.go`)
+3. **User Service** (`services/user/`)
    - Implements user-related business logic
    - Manages user authentication routes
    - Handles user registration and login
+   - Database operations for users
+
+4. **Authentication** (`services/auth/`)
+   - Password hashing and validation
+   - Security utilities
+   - JWT token handling (coming soon)
+
+5. **Types** (`types/`)
+   - Shared data structures
+   - Interface definitions
+   - Request/Response payloads
+
+6. **Utils** (`utils/`)
+   - Common utility functions
+   - JSON handling
+   - Error formatting
 
 ## Development Status
 
-The project is currently in early development. The following features are planned:
+The project is currently in active development. Current focus:
 
 - User authentication implementation
+- Database schema design
+- API endpoint implementation
+- Security enhancements
+
+Planned features:
+
 - Product management
 - Order processing
 - Payment integration
+- Admin dashboard
 
 ## Contributing
 
