@@ -32,10 +32,10 @@ type User struct {
 // RegisterUserPayload represents the data required for user registration
 // Used to validate and process registration requests
 type RegisterUserPayload struct {
-	FirstName string `json:"first_name"` // User's first name
-	LastName  string `json:"last_name"`  // User's last name
-	Email     string `json:"email"`      // User's email address
-	Password  string `json:"password"`   // User's password (will be hashed)
+	FirstName string `json:"first_name" validate:"required,min=2,max=30"`        // User's first name
+	LastName  string `json:"last_name" validate:"required,min=2,max=30"`         // User's last name
+	Email     string `json:"email" validate:"required,email"`                    // User's email address
+	Password  string `json:"password" validate:"required,min=8,max=16,alphanum"` // User's password (will be hashed)
 }
 
 // LoginUserPayload represents the data required for user login

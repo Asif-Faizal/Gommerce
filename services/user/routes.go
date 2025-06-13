@@ -2,7 +2,10 @@
 package user
 
 import (
+	"fmt"
 	"net/http"
+	"regexp"
+	"time"
 
 	"github.com/Asif-Faizal/Gommerce/services/auth"
 	"github.com/Asif-Faizal/Gommerce/types"
@@ -50,10 +53,16 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate the payload
+	if err := h.validateRegisterPayload(&payload); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
 	// Check if user already exists in the database
 	_, err := h.store.GetUserByEmail(payload.Email)
-	if err != nil {
-		utils.WriteError(w, http.StatusBadRequest, err)
+	if err == nil {
+		utils.WriteError(w, http.StatusBadRequest, fmt.Errorf("user with email %s already exists", payload.Email))
 		return
 	}
 
@@ -70,8 +79,79 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		LastName:  payload.LastName,
 		Email:     payload.Email,
 		Password:  hashedPassword,
+		CreatedAt: time.Now(),
 	}
 
-	// Return the created user data
-	utils.WriteJSON(w, http.StatusOK, user)
+	// Save the user to the database
+	if err := h.store.CreateUser(user); err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	// Return success response
+	utils.WriteJSON(w, http.StatusCreated, map[string]string{
+		"message": "user created successfully",
+	})
+}
+
+// validateRegisterPayload validates the registration payload
+// Returns an error if any required field is missing or invalid
+func (h *Handler) validateRegisterPayload(payload *types.RegisterUserPayload) error {
+	// Email validation
+	if payload.Email == "" {
+		return fmt.Errorf("email is required")
+	}
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(payload.Email) {
+		return fmt.Errorf("invalid email format")
+	}
+
+	// Password validation
+	if payload.Password == "" {
+		return fmt.Errorf("password is required")
+	}
+	if len(payload.Password) < 8 {
+		return fmt.Errorf("password must be at least 8 characters long")
+	}
+	if len(payload.Password) > 32 {
+		return fmt.Errorf("password must not exceed 32 characters")
+	}
+	// Check for at least one number and one letter
+	hasNumber := regexp.MustCompile(`[0-9]`).MatchString(payload.Password)
+	hasLetter := regexp.MustCompile(`[a-zA-Z]`).MatchString(payload.Password)
+	if !hasNumber || !hasLetter {
+		return fmt.Errorf("password must contain at least one number and one letter")
+	}
+
+	// First name validation
+	if payload.FirstName == "" {
+		return fmt.Errorf("first name is required")
+	}
+	if len(payload.FirstName) < 2 {
+		return fmt.Errorf("first name must be at least 2 characters long")
+	}
+	if len(payload.FirstName) > 50 {
+		return fmt.Errorf("first name must not exceed 50 characters")
+	}
+	// Check for valid characters in first name
+	if !regexp.MustCompile(`^[a-zA-Z\s-']+$`).MatchString(payload.FirstName) {
+		return fmt.Errorf("first name contains invalid characters")
+	}
+
+	// Last name validation
+	if payload.LastName == "" {
+		return fmt.Errorf("last name is required")
+	}
+	if len(payload.LastName) < 2 {
+		return fmt.Errorf("last name must be at least 2 characters long")
+	}
+	if len(payload.LastName) > 50 {
+		return fmt.Errorf("last name must not exceed 50 characters")
+	}
+	// Check for valid characters in last name
+	if !regexp.MustCompile(`^[a-zA-Z\s-']+$`).MatchString(payload.LastName) {
+		return fmt.Errorf("last name contains invalid characters")
+	}
+
+	return nil
 }
