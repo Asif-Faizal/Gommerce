@@ -39,7 +39,8 @@ func (s *APIServer) Run() error {
 	log.Println("Starting server on", s.listenAddress)
 
 	// Initialize user handler and register its routes
-	userHandler := user.NewHandler()
+	userStore := user.NewStore(s.db)
+	userHandler := user.NewHandler(userStore)
 	userHandler.RegisterRoutes(subrouter)
 
 	// Start the HTTP server and listen for incoming requests
