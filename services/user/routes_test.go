@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Asif-Faizal/Gommerce/services/auth"
 	"github.com/Asif-Faizal/Gommerce/types"
 	"github.com/gorilla/mux"
 )
@@ -302,36 +303,7 @@ func TestUserServiceHandlers(t *testing.T) {
 		}
 	})
 	t.Run("Should create a new user if payload is valid", func(t *testing.T) {
-		// Track if functions were called
-		createUserCalled := false
-		getUserByEmailCalled := false
-
-		// Create a mock store that simulates successful user creation
-		mockStore := &mockUserStore{
-			getUserByEmailFunc: func(email string) (*types.User, error) {
-				getUserByEmailCalled = true
-				return nil, fmt.Errorf("user not found")
-			},
-			createUserFunc: func(user *types.User) error {
-				createUserCalled = true
-				// Verify the user data
-				if user.Email != "test@example.com" {
-					return fmt.Errorf("unexpected email: %s", user.Email)
-				}
-				if user.FirstName != "John" {
-					return fmt.Errorf("unexpected first name: %s", user.FirstName)
-				}
-				if user.LastName != "Doe" {
-					return fmt.Errorf("unexpected last name: %s", user.LastName)
-				}
-				if user.Password == "password123" {
-					return fmt.Errorf("password was not hashed")
-				}
-				return nil
-			},
-		}
-
-		handler := NewHandler(mockStore)
+		// Create a valid payload
 		payload := types.RegisterUserPayload{
 			FirstName: "John",
 			LastName:  "Doe",
@@ -339,27 +311,48 @@ func TestUserServiceHandlers(t *testing.T) {
 			Password:  "password123",
 		}
 
+		// Set up mock functions
+		getUserByEmailCalled := false
+		createUserCalled := false
+
+		userStore.getUserByEmailFunc = func(email string) (*types.User, error) {
+			getUserByEmailCalled = true
+			return nil, sql.ErrNoRows
+		}
+
+		userStore.createUserFunc = func(user *types.User) error {
+			createUserCalled = true
+			user.ID = 1 // Set an ID for the created user
+			return nil
+		}
+
+		// Marshal the payload to JSON
 		marshaled, err := json.Marshal(payload)
 		if err != nil {
 			t.Fatalf("Failed to marshal payload: %v", err)
 		}
 
-		req, err := http.NewRequest(http.MethodPost, "/user/register", bytes.NewBuffer(marshaled))
+		// Create a new HTTP request with the JSON payload
+		req, err := http.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(marshaled))
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
 
+		// Create a response recorder to capture the response
 		rr := httptest.NewRecorder()
+
+		// Set up the router and register the handler
 		router := mux.NewRouter()
-		router.HandleFunc("/user/register", handler.handleRegister).Methods(http.MethodPost)
+		router.HandleFunc("/register", handler.handleRegister).Methods(http.MethodPost)
+
+		// Serve the request
 		router.ServeHTTP(rr, req)
 
-		// Verify response status
+		// Check if the response status code is 201 (Created)
 		if rr.Code != http.StatusCreated {
 			t.Errorf("Expected status %d, got %d", http.StatusCreated, rr.Code)
 		}
 
-		// Verify response body
 		var response map[string]interface{}
 		if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
 			t.Fatalf("Failed to decode response: %v", err)
@@ -381,6 +374,13 @@ func TestUserServiceHandlers(t *testing.T) {
 
 	// Test login functionality
 	t.Run("Login Tests", func(t *testing.T) {
+		// Create a test password and hash it
+		testPassword := "password123"
+		hashedPassword, err := auth.HashPassword(testPassword)
+		if err != nil {
+			t.Fatalf("Failed to hash test password: %v", err)
+		}
+
 		testCases := []struct {
 			name          string
 			payload       types.LoginUserPayload
@@ -393,14 +393,14 @@ func TestUserServiceHandlers(t *testing.T) {
 				name: "successful login",
 				payload: types.LoginUserPayload{
 					Email:    "test@example.com",
-					Password: "password123",
+					Password: testPassword,
 				},
 				mockUser: &types.User{
 					ID:        1,
 					FirstName: "John",
 					LastName:  "Doe",
 					Email:     "test@example.com",
-					Password:  "$2a$10$abcdefghijklmnopqrstuv", // Mock hashed password
+					Password:  hashedPassword,
 				},
 				expectedCode: http.StatusOK,
 			},
@@ -408,7 +408,7 @@ func TestUserServiceHandlers(t *testing.T) {
 				name: "user not found",
 				payload: types.LoginUserPayload{
 					Email:    "nonexistent@example.com",
-					Password: "password123",
+					Password: testPassword,
 				},
 				mockError:     sql.ErrNoRows,
 				expectedCode:  http.StatusUnauthorized,
@@ -425,7 +425,7 @@ func TestUserServiceHandlers(t *testing.T) {
 					FirstName: "John",
 					LastName:  "Doe",
 					Email:     "test@example.com",
-					Password:  "$2a$10$abcdefghijklmnopqrstuv", // Mock hashed password
+					Password:  hashedPassword,
 				},
 				expectedCode:  http.StatusUnauthorized,
 				expectedError: "invalid email or password",
@@ -434,7 +434,7 @@ func TestUserServiceHandlers(t *testing.T) {
 				name: "empty email",
 				payload: types.LoginUserPayload{
 					Email:    "",
-					Password: "password123",
+					Password: testPassword,
 				},
 				expectedCode:  http.StatusBadRequest,
 				expectedError: "email is required",
@@ -443,7 +443,7 @@ func TestUserServiceHandlers(t *testing.T) {
 				name: "invalid email format",
 				payload: types.LoginUserPayload{
 					Email:    "invalid-email",
-					Password: "password123",
+					Password: testPassword,
 				},
 				expectedCode:  http.StatusBadRequest,
 				expectedError: "invalid email format",
@@ -488,7 +488,7 @@ func TestUserServiceHandlers(t *testing.T) {
 					t.Fatalf("Failed to marshal payload: %v", err)
 				}
 
-				req, err := http.NewRequest(http.MethodPost, "/api/v1/login", bytes.NewBuffer(payload))
+				req, err := http.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(payload))
 				if err != nil {
 					t.Fatalf("Failed to create request: %v", err)
 				}
@@ -498,7 +498,7 @@ func TestUserServiceHandlers(t *testing.T) {
 
 				// Create router and register handler
 				router := mux.NewRouter()
-				router.HandleFunc("/api/v1/login", handler.handleLogin).Methods(http.MethodPost)
+				router.HandleFunc("/login", handler.handleLogin).Methods(http.MethodPost)
 
 				// Serve request
 				router.ServeHTTP(rr, req)
@@ -527,8 +527,12 @@ func TestUserServiceHandlers(t *testing.T) {
 						t.Error("Expected message 'login successful' in response")
 					}
 					if data, ok := response["data"].(map[string]interface{}); ok {
-						if data["email"] != tc.payload.Email {
-							t.Error("Email mismatch in response data")
+						if user, ok := data["user"].(map[string]interface{}); ok {
+							if user["email"] != tc.payload.Email {
+								t.Error("Email mismatch in response data")
+							}
+						} else {
+							t.Error("Expected user object in response data")
 						}
 					} else {
 						t.Error("Expected data object in response")

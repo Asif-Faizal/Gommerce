@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/Asif-Faizal/Gommerce/config"
 	"github.com/Asif-Faizal/Gommerce/services/auth"
 	"github.com/Asif-Faizal/Gommerce/types"
 	"github.com/Asif-Faizal/Gommerce/utils"
@@ -69,12 +70,19 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	secret := []byte(config.Envs.JWTSecret)
+	token, err := auth.CreateJWT(secret, user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error creating JWT: %w", err))
+		return
+	}
+
 	// Return success response with user data (excluding password)
 	utils.WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"status":  "success",
 		"message": "login successful",
 		"data": map[string]interface{}{
-			"token": "token",
+			"token": token,
 			"user": map[string]interface{}{
 				"id":        user.ID,
 				"firstName": user.FirstName,
@@ -157,12 +165,19 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	secret := []byte(config.Envs.JWTSecret)
+	token, err := auth.CreateJWT(secret, user.ID)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, fmt.Errorf("error creating JWT: %w", err))
+		return
+	}
+
 	// Return success response
 	utils.WriteJSON(w, http.StatusCreated, map[string]interface{}{
 		"status":  "success",
 		"message": "user created successfully",
 		"data": map[string]interface{}{
-			"token": "token",
+			"token": token,
 			"user": map[string]interface{}{
 				"id":        user.ID,
 				"firstName": user.FirstName,

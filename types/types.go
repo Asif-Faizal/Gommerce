@@ -11,6 +11,21 @@ type UserStore interface {
 	CreateUser(user *User) error
 }
 
+type ProductStore interface {
+	GetProductByID() ([]Product, error)
+	CreateProduct(product *Product) error
+}
+
+type Product struct {
+	ID          int       `json:"id"`          // Unique identifier for the product
+	Name        string    `json:"name"`        // Product name
+	Description string    `json:"description"` // Product description
+	Image       string    `json:"image"`       // Product image
+	Price       float64   `json:"price"`       // Product price
+	Quantity    int       `json:"quantity"`    // Product quantity
+	CreatedAt   time.Time `json:"createdAt"`   // Timestamp when the product was created
+}
+
 type mockUserStore struct {
 }
 
