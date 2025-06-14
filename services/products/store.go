@@ -2,6 +2,7 @@ package products
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/Asif-Faizal/Gommerce/types"
 )
@@ -35,6 +36,40 @@ func (s *Store) GetProductByID() ([]types.Product, error) {
 		products = append(products, *product)
 	}
 	return products, nil
+}
+
+// CreateProduct creates a new product in the database
+func (s *Store) CreateProduct(product *types.Product) error {
+	query := `
+		INSERT INTO products (name, description, image, price, quantity, createdAt)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`
+
+	// Set the creation time if not already set
+	if product.CreatedAt.IsZero() {
+		product.CreatedAt = time.Now()
+	}
+
+	result, err := s.db.Exec(
+		query,
+		product.Name,
+		product.Description,
+		product.Image,
+		product.Price,
+		product.Quantity,
+		product.CreatedAt,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Get the ID of the newly created product
+	id, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	product.ID = int(id)
+	return nil
 }
 
 func scanRowsIntoProduct(rows *sql.Rows) (*types.Product, error) {
