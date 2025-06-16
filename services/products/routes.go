@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
+	"github.com/Asif-Faizal/Gommerce/config"
+	"github.com/Asif-Faizal/Gommerce/services/auth"
 	"github.com/Asif-Faizal/Gommerce/types"
 	"github.com/Asif-Faizal/Gommerce/utils"
 	"github.com/gorilla/mux"
@@ -23,6 +26,30 @@ func NewHandler(store types.ProductStore) *Handler {
 	return &Handler{store: store}
 }
 
+// authenticateRequest is a helper function to authenticate requests
+func authenticateRequest(r *http.Request) (int, error) {
+	// Get the Authorization header
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return 0, fmt.Errorf("authorization header is required")
+	}
+
+	// Check if it's a Bearer token
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return 0, fmt.Errorf("invalid authorization header format")
+	}
+
+	// Verify the token
+	secret := []byte(config.Envs.JWTSecret)
+	userId, err := auth.VerifyJWT(parts[1], secret)
+	if err != nil {
+		return 0, fmt.Errorf("invalid token: %w", err)
+	}
+
+	return userId, nil
+}
+
 // RegisterRoutes sets up all the user-related routes
 // It takes a router and attaches the handler functions to specific paths
 func (h *Handler) ProductRoutes(router *mux.Router) {
@@ -31,6 +58,15 @@ func (h *Handler) ProductRoutes(router *mux.Router) {
 }
 
 func (h *Handler) handleGetProducts(w http.ResponseWriter, r *http.Request) {
+	// Authenticate the request
+	userId, err := authenticateRequest(r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	log.Printf("User %d requesting products list", userId)
+
 	products, err := h.store.GetProductByID()
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
@@ -44,7 +80,14 @@ func (h *Handler) handleGetProducts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Received create product request")
+	// Authenticate the request
+	userId, err := authenticateRequest(r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	log.Printf("User %d attempting to create a product", userId)
 
 	var product types.Product
 	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
@@ -89,7 +132,7 @@ func (h *Handler) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Product created successfully with ID: %d", product.ID)
+	log.Printf("Product created successfully with ID: %d by user: %d", product.ID, userId)
 	utils.WriteJSON(w, http.StatusCreated, map[string]interface{}{
 		"status":  "success",
 		"message": "product created successfully",
