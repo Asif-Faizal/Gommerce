@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Asif-Faizal/Gommerce/services/cart"
+	"github.com/Asif-Faizal/Gommerce/services/products"
 	"github.com/Asif-Faizal/Gommerce/services/user"
 	"github.com/gorilla/mux" // Popular HTTP router for Go
 )
@@ -42,6 +44,16 @@ func (s *APIServer) Run() error {
 	userStore := user.NewStore(s.db)
 	userHandler := user.NewHandler(userStore)
 	userHandler.RegisterRoutes(subrouter)
+
+	// Initialize product handler and register its routes
+	productStore := products.NewStore(s.db)
+	productHandler := products.NewHandler(productStore)
+	productHandler.ProductRoutes(subrouter)
+
+	// Initialize cart handler and register its routes
+	cartStore := cart.NewStore(s.db)
+	cartHandler := cart.NewHandler(cartStore, productStore)
+	cartHandler.OrderRoutes(subrouter)
 
 	// Start the HTTP server and listen for incoming requests
 	return http.ListenAndServe(s.listenAddress, router)

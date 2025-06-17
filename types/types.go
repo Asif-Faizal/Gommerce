@@ -11,11 +11,46 @@ type UserStore interface {
 	CreateUser(user *User) error
 }
 
-type mockUserStore struct {
+type ProductStore interface {
+	GetProducts() ([]Product, error)
+	CreateProduct(product *Product) error
+	GetProductsByIDs(ids []int) ([]Product, error)
 }
 
-func GetUserByEmail(email string) (*User, error) {
-	return nil, nil
+type OrderStore interface {
+	CreateOrder(order *Order) (int, error)
+	CreateOrderItem(orderItem *OrderItem) error
+	GetOrders(userID int) ([]Order, error)
+}
+
+type Order struct {
+	ID        int         `json:"id"`        // Unique identifier for the order
+	UserID    int         `json:"userID"`    // User ID associated with the order
+	Total     float64     `json:"total"`     // Total amount of the order
+	Status    string      `json:"status"`    // Status of the order
+	Address   string      `json:"address"`   // Address of the order
+	CreatedAt time.Time   `json:"createdAt"` // Timestamp when the order was created
+	Items     []OrderItem `json:"items"`     // List of items in the order
+}
+
+type OrderItem struct {
+	ID        int       `json:"id"`        // Unique identifier for the order item
+	OrderID   int       `json:"orderID"`   // Order ID associated with the order item
+	ProductID int       `json:"productID"` // Product ID associated with the order item
+	Quantity  int       `json:"quantity"`  // Quantity of the product in the order item
+	Price     float64   `json:"price"`     // Price of the product in the order item
+	CreatedAt time.Time `json:"createdAt"` // Timestamp when the order item was created
+	Product   *Product  `json:"product"`   // Product details
+}
+
+type Product struct {
+	ID          int       `json:"id"`          // Unique identifier for the product
+	Name        string    `json:"name"`        // Product name
+	Description string    `json:"description"` // Product description
+	Image       string    `json:"image"`       // Product image
+	Price       float64   `json:"price"`       // Product price
+	Quantity    int       `json:"quantity"`    // Product quantity
+	CreatedAt   time.Time `json:"createdAt"`   // Timestamp when the product was created
 }
 
 // User represents a user in the system
@@ -43,4 +78,14 @@ type RegisterUserPayload struct {
 type LoginUserPayload struct {
 	Email    string `json:"email"`    // User's email address
 	Password string `json:"password"` // User's password
+}
+
+type CartItem struct {
+	ProductID int `json:"productID"`
+	Quantity  int `json:"quantity"`
+}
+
+type CartCheckoutPayload struct {
+	Items   []CartItem `json:"items" validate:"required,min=1"`
+	Address string     `json:"address" validate:"required"`
 }
