@@ -247,7 +247,7 @@ func TestProductServiceHandlers(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				// Create mock store
 				mockStore := &mockProductStore{
-					getProductByIDFunc: func() ([]types.Product, error) {
+					getProductsFunc: func() ([]types.Product, error) {
 						if tc.mockError != nil {
 							return nil, tc.mockError
 						}
@@ -312,13 +312,14 @@ func TestProductServiceHandlers(t *testing.T) {
 
 // mockProductStore implements the types.ProductStore interface for testing
 type mockProductStore struct {
-	getProductByIDFunc func() ([]types.Product, error)
-	createProductFunc  func(product *types.Product) error
+	getProductsFunc      func() ([]types.Product, error)
+	createProductFunc    func(product *types.Product) error
+	getProductsByIDsFunc func(ids []int) ([]types.Product, error)
 }
 
-func (m *mockProductStore) GetProductByID() ([]types.Product, error) {
-	if m.getProductByIDFunc != nil {
-		return m.getProductByIDFunc()
+func (m *mockProductStore) GetProducts() ([]types.Product, error) {
+	if m.getProductsFunc != nil {
+		return m.getProductsFunc()
 	}
 	return nil, fmt.Errorf("products not found")
 }
@@ -328,4 +329,11 @@ func (m *mockProductStore) CreateProduct(product *types.Product) error {
 		return m.createProductFunc(product)
 	}
 	return nil
+}
+
+func (m *mockProductStore) GetProductsByIDs(ids []int) ([]types.Product, error) {
+	if m.getProductsByIDsFunc != nil {
+		return m.getProductsByIDsFunc(ids)
+	}
+	return nil, fmt.Errorf("products not found")
 }

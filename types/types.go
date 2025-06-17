@@ -12,8 +12,32 @@ type UserStore interface {
 }
 
 type ProductStore interface {
-	GetProductByID() ([]Product, error)
+	GetProducts() ([]Product, error)
 	CreateProduct(product *Product) error
+	GetProductsByIDs(ids []int) ([]Product, error)
+}
+
+type OrderStore interface {
+	CreateOrder(order *Order) (int, error)
+	CreateOrderItem(orderItem *OrderItem) error
+}
+
+type Order struct {
+	ID        int       `json:"id"`        // Unique identifier for the order
+	UserID    int       `json:"userID"`    // User ID associated with the order
+	Total     float64   `json:"total"`     // Total amount of the order
+	Status    string    `json:"status"`    // Status of the order
+	Address   string    `json:"address"`   // Address of the order
+	CreatedAt time.Time `json:"createdAt"` // Timestamp when the order was created
+}
+
+type OrderItem struct {
+	ID        int       `json:"id"`        // Unique identifier for the order item
+	OrderID   int       `json:"orderID"`   // Order ID associated with the order item
+	ProductID int       `json:"productID"` // Product ID associated with the order item
+	Quantity  int       `json:"quantity"`  // Quantity of the product in the order item
+	Price     float64   `json:"price"`     // Price of the product in the order item
+	CreatedAt time.Time `json:"createdAt"` // Timestamp when the order item was created
 }
 
 type Product struct {
@@ -24,9 +48,6 @@ type Product struct {
 	Price       float64   `json:"price"`       // Product price
 	Quantity    int       `json:"quantity"`    // Product quantity
 	CreatedAt   time.Time `json:"createdAt"`   // Timestamp when the product was created
-}
-
-type mockUserStore struct {
 }
 
 func GetUserByEmail(email string) (*User, error) {
@@ -58,4 +79,14 @@ type RegisterUserPayload struct {
 type LoginUserPayload struct {
 	Email    string `json:"email"`    // User's email address
 	Password string `json:"password"` // User's password
+}
+
+type CartItem struct {
+	ProductID int `json:"productID"`
+	Quantity  int `json:"quantity"`
+}
+
+type CartCheckoutPayload struct {
+	Items   []CartItem `json:"items" validate:"required,min=1"`
+	Address string     `json:"address" validate:"required"`
 }

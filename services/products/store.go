@@ -2,6 +2,8 @@ package products
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Asif-Faizal/Gommerce/types"
@@ -72,6 +74,36 @@ func (s *Store) CreateProduct(product *types.Product) error {
 	return nil
 }
 
+func (s *Store) GetProductsByIDs(ids []int) ([]types.Product, error) {
+	if len(ids) == 0 {
+		return []types.Product{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
+	query := fmt.Sprintf("SELECT * FROM products WHERE id IN (%s)", strings.Join(placeholders, ","))
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	products := []types.Product{}
+	for rows.Next() {
+		product, err := scanRowsIntoProduct(rows)
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, *product)
+	}
+	return products, nil
+}
+
 func scanRowsIntoProduct(rows *sql.Rows) (*types.Product, error) {
 	product := &types.Product{}
 	err := rows.Scan(
@@ -87,4 +119,23 @@ func scanRowsIntoProduct(rows *sql.Rows) (*types.Product, error) {
 		return nil, err
 	}
 	return product, nil
+}
+
+// GetProducts retrieves all products from the database
+func (s *Store) GetProducts() ([]types.Product, error) {
+	query := "SELECT * FROM products"
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	products := []types.Product{}
+	for rows.Next() {
+		product, err := scanRowsIntoProduct(rows)
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, *product)
+	}
+	return products, nil
 }
