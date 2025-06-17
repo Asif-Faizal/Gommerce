@@ -41,8 +41,6 @@ func main() {
 	// Create a new API server instance with the configured port and database connection
 	server := api.NewAPIServer(config.Envs.Port, db)
 
-	// Start the server and handle any potential errors
-	log.Printf("Starting server on %s", config.Envs.Port)
 	if err := server.Run(); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}

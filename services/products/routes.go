@@ -31,7 +31,16 @@ func (h *Handler) ProductRoutes(router *mux.Router) {
 }
 
 func (h *Handler) handleGetProducts(w http.ResponseWriter, r *http.Request) {
-	products, err := h.store.GetProductByID()
+	// Authenticate the request
+	userId, err := utils.AuthenticateRequest(r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	log.Printf("User %d requesting products list", userId)
+
+	products, err := h.store.GetProducts()
 	if err != nil {
 		utils.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -44,7 +53,14 @@ func (h *Handler) handleGetProducts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Received create product request")
+	// Authenticate the request
+	userId, err := utils.AuthenticateRequest(r)
+	if err != nil {
+		utils.WriteError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	log.Printf("User %d attempting to create a product", userId)
 
 	var product types.Product
 	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
@@ -89,7 +105,7 @@ func (h *Handler) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Product created successfully with ID: %d", product.ID)
+	log.Printf("Product created successfully with ID: %d by user: %d", product.ID, userId)
 	utils.WriteJSON(w, http.StatusCreated, map[string]interface{}{
 		"status":  "success",
 		"message": "product created successfully",
