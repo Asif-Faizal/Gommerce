@@ -25,6 +25,7 @@ func NewHandler(store types.OrderStore, productStore types.ProductStore) *Handle
 
 func (h *Handler) OrderRoutes(router *mux.Router) {
 	router.HandleFunc("/order", h.handleCheckout).Methods(http.MethodPost)
+	router.HandleFunc("/orders", h.handleGetOrders).Methods(http.MethodGet)
 }
 
 func (h *Handler) handleCheckout(w http.ResponseWriter, r *http.Request) {
@@ -117,5 +118,25 @@ func (h *Handler) handleCheckout(w http.ResponseWriter, r *http.Request) {
 		"status":  "success",
 		"message": "order created successfully",
 		"data":    order,
+	})
+}
+
+func (h *Handler) handleGetOrders(w http.ResponseWriter, r *http.Request) {
+	userId, err := utils.AuthenticateRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	orders, err := h.store.GetOrders(userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"status":  "success",
+		"message": "orders fetched successfully",
+		"data":    orders,
 	})
 }

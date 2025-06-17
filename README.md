@@ -68,6 +68,7 @@ We follow Test-Driven Development (TDD):
 - Implement the feature
 - Refactor while keeping tests passing
 - Example from our codebase:
+
   ```go
   // routes_test.go
   func TestUserServiceHandlers(t *testing.T) {
@@ -85,6 +86,7 @@ We implement comprehensive error handling:
 - Proper HTTP status codes
 - Consistent error response format
 - Example:
+
   ```go
   // Returns 400 for invalid input
   // Returns 500 for server errors
@@ -130,7 +132,9 @@ Security is a top priority:
 
 ## API Endpoints
 
-### User Registration
+### Authentication
+
+#### User Registration
 
 ```http
 POST /api/v1/register
@@ -145,6 +149,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
     "status": "success",
@@ -152,7 +157,7 @@ Response:
 }
 ```
 
-### User Login
+#### User Login
 
 ```http
 POST /api/v1/login
@@ -165,6 +170,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
     "status": "success",
@@ -178,7 +184,9 @@ Response:
 }
 ```
 
-### Get User by ID
+### User Management
+
+#### Get User by ID
 
 ```http
 GET /api/v1/users/{id}
@@ -186,6 +194,7 @@ Authorization: Bearer {token}
 ```
 
 Response:
+
 ```json
 {
     "status": "success",
@@ -198,7 +207,224 @@ Response:
 }
 ```
 
-### Curl Commands
+### Products
+
+#### Get All Products
+
+```http
+GET /api/v1/products
+Authorization: Bearer {token}
+```
+
+Response:
+
+```json
+{
+    "status": "success",
+    "data": [
+        {
+            "id": 1,
+            "name": "Product 1",
+            "description": "Description of product 1",
+            "image": "product1.jpg",
+            "price": 29.99,
+            "quantity": 100,
+            "createdAt": "2024-01-01T00:00:00Z"
+        }
+    ]
+}
+```
+
+#### Create Product
+
+```http
+POST /api/v1/products
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+    "name": "New Product",
+    "description": "Description of new product",
+    "image": "newproduct.jpg",
+    "price": 49.99,
+    "quantity": 50
+}
+```
+
+Response:
+
+```json
+{
+    "status": "success",
+    "message": "Product created successfully",
+    "data": {
+        "id": 2,
+        "name": "New Product",
+        "description": "Description of new product",
+        "image": "newproduct.jpg",
+        "price": 49.99,
+        "quantity": 50,
+        "createdAt": "2024-01-01T00:00:00Z"
+    }
+}
+```
+
+### Orders
+
+#### Create Order (Checkout)
+
+```http
+POST /api/v1/order
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+    "items": [
+        {
+            "productID": 1,
+            "quantity": 2
+        },
+        {
+            "productID": 2,
+            "quantity": 1
+        }
+    ],
+    "address": "123 Main St, City, Country, ZIP"
+}
+```
+
+Response:
+
+```json
+{
+    "status": "success",
+    "message": "order created successfully",
+    "data": {
+        "id": 1,
+        "userID": 1,
+        "total": 109.97,
+        "status": "pending",
+        "address": "123 Main St, City, Country, ZIP",
+        "createdAt": "2024-01-01T00:00:00Z",
+        "items": [
+            {
+                "id": 1,
+                "orderID": 1,
+                "productID": 1,
+                "quantity": 2,
+                "price": 29.99,
+                "product": {
+                    "id": 1,
+                    "name": "Product 1",
+                    "description": "Description of product 1",
+                    "image": "product1.jpg",
+                    "price": 29.99,
+                    "quantity": 100,
+                    "createdAt": "2024-01-01T00:00:00Z"
+                }
+            },
+            {
+                "id": 2,
+                "orderID": 1,
+                "productID": 2,
+                "quantity": 1,
+                "price": 49.99,
+                "product": {
+                    "id": 2,
+                    "name": "New Product",
+                    "description": "Description of new product",
+                    "image": "newproduct.jpg",
+                    "price": 49.99,
+                    "quantity": 50,
+                    "createdAt": "2024-01-01T00:00:00Z"
+                }
+            }
+        ]
+    }
+}
+```
+
+#### Get User Orders
+
+```http
+GET /api/v1/orders
+Authorization: Bearer {token}
+```
+
+Response:
+
+```json
+{
+    "status": "success",
+    "message": "orders fetched successfully",
+    "data": [
+        {
+            "id": 1,
+            "userID": 1,
+            "total": 109.97,
+            "status": "pending",
+            "address": "123 Main St, City, Country, ZIP",
+            "createdAt": "2024-01-01T00:00:00Z",
+            "items": [
+                {
+                    "id": 1,
+                    "orderID": 1,
+                    "productID": 1,
+                    "quantity": 2,
+                    "price": 29.99,
+                    "product": {
+                        "id": 1,
+                        "name": "Product 1",
+                        "description": "Description of product 1",
+                        "image": "product1.jpg",
+                        "price": 29.99,
+                        "quantity": 100,
+                        "createdAt": "2024-01-01T00:00:00Z"
+                    }
+                },
+                {
+                    "id": 2,
+                    "orderID": 1,
+                    "productID": 2,
+                    "quantity": 1,
+                    "price": 49.99,
+                    "product": {
+                        "id": 2,
+                        "name": "New Product",
+                        "description": "Description of new product",
+                        "image": "newproduct.jpg",
+                        "price": 49.99,
+                        "quantity": 50,
+                        "createdAt": "2024-01-01T00:00:00Z"
+                    }
+                }
+            ]
+        }
+    ]
+}
+```
+
+### Error Responses
+
+All endpoints may return the following error responses:
+
+```json
+{
+    "error": "Error message description"
+}
+```
+
+Common HTTP Status Codes:
+
+- `200 OK`: Request successful
+- `201 Created`: Resource created successfully
+- `400 Bad Request`: Invalid input data
+- `401 Unauthorized`: Authentication required or invalid token
+- `403 Forbidden`: Insufficient permissions
+- `404 Not Found`: Resource not found
+- `500 Internal Server Error`: Server error
+
+### Curl Examples
 
 1. **Register a new user**:
 
@@ -224,29 +450,39 @@ curl -X POST http://localhost:8080/api/v1/login \
   }'
 ```
 
-3. **Get user details** (requires authentication):
+3. **Get user details**:
 
 ```bash
 curl -X GET http://localhost:8080/api/v1/users/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-### Response Status Codes
+4. **Create a new order (checkout)**:
 
-- `200 OK`: Request successful
-- `201 Created`: Resource created successfully
-- `400 Bad Request`: Invalid input data
-- `401 Unauthorized`: Authentication required
-- `403 Forbidden`: Insufficient permissions
-- `404 Not Found`: Resource not found
-- `500 Internal Server Error`: Server error
+```bash
+curl -X POST http://localhost:8080/api/v1/order \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "items": [
+      {
+        "productID": 1,
+        "quantity": 2
+      },
+      {
+        "productID": 2,
+        "quantity": 1
+      }
+    ],
+    "address": "123 Main St, City, Country, ZIP"
+  }'
+```
 
-### Error Response Format
+5. **Get user orders**:
 
-```json
-{
-    "error": "Error message description"
-}
+```bash
+curl -X GET http://localhost:8080/api/v1/orders \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ## Implementation Deep Dive: User Registration
@@ -511,17 +747,20 @@ This implementation follows Go best practices and provides a solid foundation fo
 ### Environment Setup
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/Asif-Faizal/Gommerce.git
    cd Gommerce
    ```
 
 2. Install dependencies:
+
    ```bash
    go mod download
    ```
 
 3. Configure environment variables:
+
    ```bash
    # Copy the example env file
    cp .env.example .env
@@ -530,11 +769,13 @@ This implementation follows Go best practices and provides a solid foundation fo
    ```
 
 4. Create the database:
+
    ```sql
    CREATE DATABASE gommerce;
    ```
 
 5. Run the server:
+
    ```bash
    go run cmd/main.go
    ```
@@ -638,6 +879,7 @@ The migration runner (`cmd/migrate/main.go`) handles database migrations using t
 #### Environment Configuration
 
 The migration runner uses the following environment variables:
+
 ```env
 DB_USER=your_db_user
 DB_PASSWORD=your_db_password
@@ -648,6 +890,7 @@ DB_NAME=gommerce
 #### Command Line Usage
 
 The migration runner accepts two commands:
+
 ```bash
 # Apply migrations
 go run cmd/migrate/main.go up
@@ -677,6 +920,7 @@ The runner provides detailed logging:
 ### Migration Workflow
 
 1. **Initial Setup**
+
    ```bash
    # Create database
    mysql -u root -p
@@ -687,6 +931,7 @@ The runner provides detailed logging:
    ```
 
 2. **Creating New Migrations**
+
    ```bash
    # Create a new migration
    make migration-create add_new_table
@@ -697,6 +942,7 @@ The runner provides detailed logging:
    ```
 
 3. **Applying Migrations**
+
    ```bash
    # Apply all pending migrations
    make migrate-up
@@ -706,6 +952,7 @@ The runner provides detailed logging:
    ```
 
 4. **Verifying Migrations**
+
    ```bash
    # Check migration status
    mysql -u root -p gommerce

@@ -20,15 +20,17 @@ type ProductStore interface {
 type OrderStore interface {
 	CreateOrder(order *Order) (int, error)
 	CreateOrderItem(orderItem *OrderItem) error
+	GetOrders(userID int) ([]Order, error)
 }
 
 type Order struct {
-	ID        int       `json:"id"`        // Unique identifier for the order
-	UserID    int       `json:"userID"`    // User ID associated with the order
-	Total     float64   `json:"total"`     // Total amount of the order
-	Status    string    `json:"status"`    // Status of the order
-	Address   string    `json:"address"`   // Address of the order
-	CreatedAt time.Time `json:"createdAt"` // Timestamp when the order was created
+	ID        int         `json:"id"`        // Unique identifier for the order
+	UserID    int         `json:"userID"`    // User ID associated with the order
+	Total     float64     `json:"total"`     // Total amount of the order
+	Status    string      `json:"status"`    // Status of the order
+	Address   string      `json:"address"`   // Address of the order
+	CreatedAt time.Time   `json:"createdAt"` // Timestamp when the order was created
+	Items     []OrderItem `json:"items"`     // List of items in the order
 }
 
 type OrderItem struct {
@@ -38,6 +40,7 @@ type OrderItem struct {
 	Quantity  int       `json:"quantity"`  // Quantity of the product in the order item
 	Price     float64   `json:"price"`     // Price of the product in the order item
 	CreatedAt time.Time `json:"createdAt"` // Timestamp when the order item was created
+	Product   *Product  `json:"product"`   // Product details
 }
 
 type Product struct {
@@ -48,10 +51,6 @@ type Product struct {
 	Price       float64   `json:"price"`       // Product price
 	Quantity    int       `json:"quantity"`    // Product quantity
 	CreatedAt   time.Time `json:"createdAt"`   // Timestamp when the product was created
-}
-
-func GetUserByEmail(email string) (*User, error) {
-	return nil, nil
 }
 
 // User represents a user in the system
